@@ -11,9 +11,9 @@ services:
       - key: MAILJET_SMTP_PORT
         value: 587
       - key: MAILJET_API_KEY
-        value: REDACTED_API_KEY
+        value: your_mailjet_api_key_here
       - key: MAILJET_SECRET_KEY
-        value: REDACTED_SECRET_KEY
+        value: your_mailjet_secret_key_here
       - key: FROM_EMAIL
         value: sales.healthlinenaturals@gmail.com
       - key: SALES_EMAIL
