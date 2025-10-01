@@ -1,9 +1,10 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import smtplib
-from email.mime.text import MIMEText
 import os
 from dotenv import load_dotenv
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -11,21 +12,37 @@ CORS(app)  # Enable CORS for cross-origin requests from Netlify
 
 # Load environment variables
 load_dotenv()
-EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
-EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
+# Mailjet SMTP Configuration
+MAILJET_SMTP_SERVER = os.getenv("MAILJET_SMTP_SERVER", "in-v3.mailjet.com")
+MAILJET_SMTP_PORT = int(os.getenv("MAILJET_SMTP_PORT", "587"))
+MAILJET_API_KEY = os.getenv("MAILJET_API_KEY")
+MAILJET_SECRET_KEY = os.getenv("MAILJET_SECRET_KEY")
 SALES_EMAIL = os.getenv("SALES_EMAIL")
+FROM_EMAIL = os.getenv("FROM_EMAIL")
 
 def send_email(to_email, subject, body):
-    """Helper function to send email via Gmail SMTP"""
-    msg = MIMEText(body)
-    msg['Subject'] = subject
-    msg['From'] = EMAIL_ADDRESS
-    msg['To'] = to_email
-
+    """Helper function to send email via Mailjet SMTP"""
     try:
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-            server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-            server.send_message(msg)
+        # Create message
+        msg = MIMEMultipart()
+        msg['From'] = FROM_EMAIL
+        msg['To'] = to_email
+        msg['Subject'] = subject
+        
+        # Add body to email
+        msg.attach(MIMEText(body, 'html'))
+        
+        # Create SMTP session with Mailjet
+        server = smtplib.SMTP(MAILJET_SMTP_SERVER, MAILJET_SMTP_PORT)
+        server.starttls()  # Enable security
+        server.login(MAILJET_API_KEY, MAILJET_SECRET_KEY)
+        
+        # Send email
+        text = msg.as_string()
+        server.sendmail(FROM_EMAIL, to_email, text)
+        server.quit()
+        
+        print(f"Email sent successfully to {to_email}")
         return True
     except Exception as e:
         print(f"Error sending email to {to_email}: {str(e)}")
@@ -78,29 +95,29 @@ def send_order_emails():
         # Customer email
         customer_subject = f"Order Confirmation - Order #{order_id}"
         customer_body = f"""
-Dear {customer_name},
+Dear {customer_name},<br><br>
 
-Thank you for your order with Healthline Naturals! Below are your order details:
+Thank you for your order with Healthline Naturals! Below are your order details:<br><br>
 
-Order ID: {order_id}
-Customer Name: {customer_name}
-Email: {customer_email}
-Phone: {customer_phone}
-{shipping_info}
-Payment Method: {payment_method}
+<strong>Order ID:</strong> {order_id}<br>
+<strong>Customer Name:</strong> {customer_name}<br>
+<strong>Email:</strong> {customer_email}<br>
+<strong>Phone:</strong> {customer_phone}<br>
+<strong>{shipping_info}</strong><br>
+<strong>Payment Method:</strong> {payment_method}<br><br>
 
-Order Items:
-{items_formatted}
+<strong>Order Items:</strong><br>
+{items_formatted.replace(chr(10), '<br>')}<br><br>
 
-Summary:
-- Subtotal: Ksh {subtotal:.2f}
-- Delivery Fee: Ksh {delivery_fee:.2f}
-- Tax (16%): Ksh {tax:.2f}
-- Total: Ksh {order_total:.2f}
+<strong>Summary:</strong><br>
+- Subtotal: Ksh {subtotal:.2f}<br>
+- Delivery Fee: Ksh {delivery_fee:.2f}<br>
+- Tax (16%): Ksh {tax:.2f}<br>
+- Total: Ksh {order_total:.2f}<br><br>
 
-We'll process your order soon. For any queries, contact us at {EMAIL_ADDRESS}.
+We'll process your order soon. For any queries, contact us at {FROM_EMAIL}.<br><br>
 
-Best regards,
+Best regards,<br>
 Healthline Naturals
 """
         customer_success = send_email(customer_email, customer_subject, customer_body)
@@ -108,25 +125,25 @@ Healthline Naturals
         # Sales team email
         sales_subject = f"New Order Notification - Order #{order_id}"
         sales_body = f"""
-New order received!
+<strong>New order received!</strong><br><br>
 
-Order ID: {order_id}
-Customer Name: {customer_name}
-Email: {customer_email}
-Phone: {customer_phone}
-{shipping_info}
-Payment Method: {payment_method}
+<strong>Order ID:</strong> {order_id}<br>
+<strong>Customer Name:</strong> {customer_name}<br>
+<strong>Email:</strong> {customer_email}<br>
+<strong>Phone:</strong> {customer_phone}<br>
+<strong>{shipping_info}</strong><br>
+<strong>Payment Method:</strong> {payment_method}<br><br>
 
-Order Items:
-{items_formatted}
+<strong>Order Items:</strong><br>
+{items_formatted.replace(chr(10), '<br>')}<br><br>
 
-Summary:
-- Subtotal: Ksh {subtotal:.2f}
-- Delivery Fee: Ksh {delivery_fee:.2f}
-- Tax (16%): Ksh {tax:.2f}
-- Total: Ksh {order_total:.2f}
+<strong>Summary:</strong><br>
+- Subtotal: Ksh {subtotal:.2f}<br>
+- Delivery Fee: Ksh {delivery_fee:.2f}<br>
+- Tax (16%): Ksh {tax:.2f}<br>
+- Total: Ksh {order_total:.2f}<br><br>
 
-Please process the order promptly.
+Please process the order promptly.<br><br>
 
 Healthline Naturals
 """

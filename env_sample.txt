@@ -1,0 +1,12 @@
+# Mailjet SMTP Configuration
+MAILJET_SMTP_SERVER=in-v3.mailjet.com
+MAILJET_SMTP_PORT=587
+MAILJET_API_KEY=REDACTED_API_KEY
+MAILJET_SECRET_KEY=REDACTED_SECRET_KEY
+
+# Email Configuration
+FROM_EMAIL=sales.healthlinenaturals@gmail.com
+SALES_EMAIL=healthlinenaturals254@gmail.com
+
+# Server Configuration (optional)
+PORT=5000

@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: email-service-resend
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    envVars:
+      - key: MAILJET_SMTP_SERVER
+        value: in-v3.mailjet.com
+      - key: MAILJET_SMTP_PORT
+        value: 587
+      - key: MAILJET_API_KEY
+        value: REDACTED_API_KEY
+      - key: MAILJET_SECRET_KEY
+        value: REDACTED_SECRET_KEY
+      - key: FROM_EMAIL
+        value: sales.healthlinenaturals@gmail.com
+      - key: SALES_EMAIL
+        value: healthlinenaturals254@gmail.com
+      - key: PORT
+        value: 5000
