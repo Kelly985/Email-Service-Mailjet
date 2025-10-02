@@ -6,10 +6,6 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: python app.py
     envVars:
-      - key: MAILJET_SMTP_SERVER
-        value: in-v3.mailjet.com
-      - key: MAILJET_SMTP_PORT
-        value: 587
       - key: MAILJET_API_KEY
         value: your_mailjet_api_key_here
       - key: MAILJET_SECRET_KEY

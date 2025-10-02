@@ -2,9 +2,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import requests
+import base64
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -12,38 +11,57 @@ CORS(app)  # Enable CORS for cross-origin requests from Netlify
 
 # Load environment variables
 load_dotenv()
-# Mailjet SMTP Configuration
-MAILJET_SMTP_SERVER = os.getenv("MAILJET_SMTP_SERVER", "in-v3.mailjet.com")
-MAILJET_SMTP_PORT = int(os.getenv("MAILJET_SMTP_PORT", "587"))
+# Mailjet API Configuration
 MAILJET_API_KEY = os.getenv("MAILJET_API_KEY")
 MAILJET_SECRET_KEY = os.getenv("MAILJET_SECRET_KEY")
 SALES_EMAIL = os.getenv("SALES_EMAIL")
 FROM_EMAIL = os.getenv("FROM_EMAIL")
 
 def send_email(to_email, subject, body):
-    """Helper function to send email via Mailjet SMTP"""
+    """Helper function to send email via Mailjet HTTP API"""
     try:
-        # Create message
-        msg = MIMEMultipart()
-        msg['From'] = FROM_EMAIL
-        msg['To'] = to_email
-        msg['Subject'] = subject
+        # Mailjet API endpoint
+        url = "https://api.mailjet.com/v3.1/send"
         
-        # Add body to email
-        msg.attach(MIMEText(body, 'html'))
+        # Create authentication header
+        auth_string = f"{MAILJET_API_KEY}:{MAILJET_SECRET_KEY}"
+        auth_bytes = auth_string.encode('ascii')
+        auth_b64 = base64.b64encode(auth_bytes).decode('ascii')
         
-        # Create SMTP session with Mailjet
-        server = smtplib.SMTP(MAILJET_SMTP_SERVER, MAILJET_SMTP_PORT)
-        server.starttls()  # Enable security
-        server.login(MAILJET_API_KEY, MAILJET_SECRET_KEY)
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Basic {auth_b64}'
+        }
         
-        # Send email
-        text = msg.as_string()
-        server.sendmail(FROM_EMAIL, to_email, text)
-        server.quit()
+        # Email payload
+        payload = {
+            "Messages": [
+                {
+                    "From": {
+                        "Email": FROM_EMAIL,
+                        "Name": "Healthline Naturals"
+                    },
+                    "To": [
+                        {
+                            "Email": to_email
+                        }
+                    ],
+                    "Subject": subject,
+                    "HTMLPart": body
+                }
+            ]
+        }
         
-        print(f"Email sent successfully to {to_email}")
-        return True
+        # Send email via HTTP API
+        response = requests.post(url, json=payload, headers=headers)
+        
+        if response.status_code == 200:
+            print(f"Email sent successfully to {to_email}")
+            return True
+        else:
+            print(f"Error sending email to {to_email}: {response.status_code} - {response.text}")
+            return False
+            
     except Exception as e:
         print(f"Error sending email to {to_email}: {str(e)}")
         return False

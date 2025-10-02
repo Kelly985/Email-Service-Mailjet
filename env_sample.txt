@@ -1,6 +1,4 @@
-# Mailjet SMTP Configuration
-MAILJET_SMTP_SERVER=in-v3.mailjet.com
-MAILJET_SMTP_PORT=587
+# Mailjet API Configuration
 MAILJET_API_KEY=your_mailjet_api_key_here
 MAILJET_SECRET_KEY=your_mailjet_secret_key_here
 
